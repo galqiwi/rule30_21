@@ -6,6 +6,7 @@
 #include "../crunching/process_parallelogram.h"
 #include "SharedArray.hpp"
 #include "SharedValue.hpp"
+#include "../utils.h"
 
 void Worker::Main(int process_id, size_t processes_n) {
   size_t horizontal_size = 10000; // TODO uniform way to set sizes
@@ -17,17 +18,28 @@ void Worker::Main(int process_id, size_t processes_n) {
   std::vector<Word> buffer_2(horizontal_size + 2);
 
   while (true) {
-    cyanide.Update(0);
+    auto read_time = TimeIt([&]() {
+      cyanide.Update(0);
+      if (*cyanide == 0) {
+        vertical.Update(0);
+        horizontal.Update(0);
+      }
+    });
+
     if (*cyanide > 0) {
       return;
     }
-    vertical.Update(0);
-    horizontal.Update(0);
-    // processing
-    crunching::ProcessParallelogram(*horizontal, *vertical, buffer_1, buffer_2);
 
-    SharedValue<Word>(process_id).Send(0);
-    vertical.Send(0);
-    horizontal.Send(0);
+    auto processing_time = TimeIt([&]() {
+      crunching::ProcessParallelogram(*horizontal, *vertical, buffer_1, buffer_2);
+    });
+
+    auto write_time = TimeIt([&]() {
+      SharedValue<Word>(process_id).Send(0);
+      vertical.Send(0);
+      horizontal.Send(0);
+    });
+
+//    std::cout << read_time << " " << processing_time << " " << write_time << std::endl;
   }
 }
