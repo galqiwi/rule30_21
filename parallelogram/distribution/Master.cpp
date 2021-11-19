@@ -9,108 +9,7 @@
 
 #include "SharedArray.hpp"
 #include "SharedValue.hpp"
-
-template<typename T>
-class Grid {
- public:
-
-  Grid(T default_horizontal, T default_vertical) {
-    defaults_[Horizontal()] = std::move(default_horizontal);
-    defaults_[Vertical()] = std::move(default_vertical);
-  }
-
-  bool HasWork() {
-    return !free_cells_.empty();
-  }
-
-  std::pair<size_t, size_t> GetWork() {
-    assert(HasWork());
-    auto out = *free_cells_.begin();
-    free_cells_.erase(out);
-    return out;
-  }
-
-  std::pair<T, T> Erase(std::pair<size_t, size_t> cell) {
-    auto [x, y] = cell;
-
-    assert(data_.count(std::make_tuple(x, y, false)) == 1);
-    assert(data_.count(std::make_tuple(x, y, true)) == 1);
-
-    auto horizontal_data = std::move(
-        data_[std::make_tuple(x, y, Horizontal())]
-    );
-    auto vertical_data = std::move(
-        data_[std::make_tuple(x, y, Vertical())]
-    );
-
-    data_.erase(std::make_tuple(x, y, Horizontal()));
-    data_.erase(std::make_tuple(x, y, Vertical()));
-
-    return {std::move(vertical_data), std::move(horizontal_data)};
-  }
-
-  const T& GetHorizontal(std::pair<size_t, size_t> cell) {
-    auto [x, y] = cell;
-    return data_[std::make_tuple(x, y, Horizontal())];
-  }
-
-  const T& GetVertical(std::pair<size_t, size_t> cell) {
-    auto [x, y] = cell;
-    return data_[std::make_tuple(x, y, Vertical())];
-  }
-
-  void SubmitWork(std::pair<size_t, size_t> cell, bool type, T work) {
-    auto [x, y] = cell;
-    assert(data_.count(std::make_tuple(x, y, type)) == 0);
-    data_[std::make_tuple(x, y, type)] = std::move(work);
-    if (x == 0 && y != 0) {
-      assert(type == Horizontal());
-      data_[std::make_tuple(x, y, Vertical())] = defaults_[Vertical()];
-    }
-
-    if (x != 0 && y == 0) {
-      assert(type == Vertical());
-      data_[std::make_tuple(x, y, Horizontal())] = defaults_[Horizontal()];
-    }
-
-    if (data_.count(std::make_tuple(x, y, !type))) {
-      free_cells_.emplace(x, y);
-    }
-  }
-
-  static bool Horizontal() {
-    return true;
-  }
-
-  static bool Vertical() {
-    return !Horizontal();
-  }
- private:
-  std::map<bool, T> defaults_;
-  std::set<std::pair<size_t, size_t>> free_cells_;
-  std::map<std::tuple<size_t, size_t, bool>, T> data_;
-};
-
-Grid<SharedArray<Word>> MakeGrid(size_t horizontal_size, size_t vertical_size) {
-  Grid<SharedArray<Word>> out(
-      SharedArray<Word>(horizontal_size),
-      SharedArray<Word>(vertical_size * 2)
-  );
-
-  auto initial_array = SharedArray<Word>(horizontal_size);
-  (*initial_array)[0] = 1;
-  out.SubmitWork(
-      std::make_pair(0, 0),
-      out.Horizontal(),
-      std::move(initial_array)
-  );
-  out.SubmitWork(
-      std::make_pair(0, 0),
-      out.Vertical(),
-      SharedArray<Word>(vertical_size * 2)
-  );
-  return std::move(out);
-}
+#include "Grid.hpp"
 
 void SendPlacebo(int receiver) {
   SharedValue<Word>(0).Send(receiver);
@@ -126,7 +25,7 @@ void Master::Main(size_t processes_n) {
 
   auto grid = MakeGrid(horizontal_size, vertical_size);
 
-  std::map<int, std::pair<size_t, size_t>> assignments;
+  std::map<int, Cell> assignments;
   std::set<int> free_pids;
   for (size_t i = 1; i < processes_n; ++i) {
     free_pids.emplace(i);
