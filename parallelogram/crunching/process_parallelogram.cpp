@@ -131,6 +131,7 @@ bool WordCoordinates::Calculatable(size_t horizontal_size,
                                    size_t vertical_size) {
   return (x < horizontal_size && y < vertical_size);
 }
+
 WordCoordinates WordCoordinates::Next() {
   return {x + 1, y + 1};
 }
