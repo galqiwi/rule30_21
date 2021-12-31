@@ -18,7 +18,7 @@ using Data = std::vector<crunching::Word>;
 
 class TGalqiwisV1Grid : public ISendableGrid {
  public:
-  TGalqiwisV1Grid() {
+  explicit TGalqiwisV1Grid(GalqiwisV1GridConfig config): config_(config) {
   }
 
   void Init() override {
@@ -95,10 +95,10 @@ class TGalqiwisV1Grid : public ISendableGrid {
   void Prepare(Cell cell) {
     assert(Validate(cell));
     if (tops_.count(cell) < 1) {
-      tops_[cell] = std::move(crunching::CreateInitialHorizontalData(100));
+      tops_[cell] = std::move(crunching::CreateInitialHorizontalData(config_.horizontal_cell_size));
     }
     if (lefts_.count(cell) < 1) {
-      lefts_[cell] = std::move(crunching::CreateInitialVerticalData(100));
+      lefts_[cell] = std::move(crunching::CreateInitialVerticalData(config_.vertical_cell_size));
     }
   }
 
@@ -106,12 +106,13 @@ class TGalqiwisV1Grid : public ISendableGrid {
   std::map<Cell, Data> lefts_;
   std::vector<Data> buffers_;
   std::mutex mutex_;
+  GalqiwisV1GridConfig config_;
 };
 
 }
 
-ISendableGridPtr CreateGalqiwisV1Grid() {
-  return std::make_shared<impl::TGalqiwisV1Grid>();
+ISendableGridPtr CreateGalqiwisV1Grid(GalqiwisV1GridConfig config) {
+  return std::make_shared<impl::TGalqiwisV1Grid>(config);
 }
 
 }

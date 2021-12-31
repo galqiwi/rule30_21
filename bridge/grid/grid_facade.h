@@ -15,7 +15,7 @@ namespace grid {
 class TSendableGridFacade : public grid::ISendableGrid {
  public:
   TSendableGridFacade() = delete;
-  TSendableGridFacade(grid::ISendableGridPtr backend);
+  explicit TSendableGridFacade(grid::ISendableGridPtr backend);
 
   void Init() override;
   void Do(Cell) override;
@@ -27,7 +27,7 @@ class TSendableGridFacade : public grid::ISendableGrid {
   virtual void SendLeft(Cell) override;
   virtual void ReceiveLeft(Cell) override;
 
-  std::optional<Cell> GetValidCell();
+  std::optional<Cell> PullValidCell();
  private:
   bool Validate(Cell) ;
 

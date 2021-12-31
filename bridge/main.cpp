@@ -6,19 +6,13 @@
 #include <iostream>
 #include "grid/impl/galqiwi_v1_impl.h"
 #include "grid/grid_facade.h"
+#include "solvers/multithreaded_solver/multithreaded_solver.h"
+#include "solvers/simple_solver/simple_solver.h"
 
 int main() {
-  auto grid = grid::TSendableGridFacade(grid::CreateGalqiwisV1Grid());
+  auto grid = grid::CreateGalqiwisV1Grid({
+      .horizontal_cell_size = 1024
+  });
+  solvers::CreateSimpleSolver(grid)->Solve();
 
-  grid.Init();
-
-  for (int i = 0; i < 1000; i++) {
-    auto cell = grid.GetValidCell();
-    if (cell) {
-      std::cout << cell->first << " " << cell->second << std::endl;
-      grid.Do(*cell);
-    } else {
-      break;
-    }
-  }
 }

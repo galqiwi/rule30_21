@@ -101,9 +101,12 @@ bool TSendableGridFacade::Validate(Cell cell) {
   bool left_ok = (lefts_.count(cell) > 0 || cell.first == 0);
   return top_ok && left_ok;
 }
-std::optional<Cell> TSendableGridFacade::GetValidCell() {
+std::optional<Cell> TSendableGridFacade::PullValidCell() {
+  std::lock_guard<std::mutex> guard(mutex_);
   if (!valid_cells_.empty()) {
-    return *valid_cells_.begin();
+    auto output = std::move(*valid_cells_.begin());
+    valid_cells_.erase(valid_cells_.begin());
+    return std::move(output);
   } else {
     return std::nullopt;
   }

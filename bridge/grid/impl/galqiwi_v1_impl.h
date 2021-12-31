@@ -9,7 +9,12 @@
 
 namespace grid {
 
-ISendableGridPtr CreateGalqiwisV1Grid();
+struct GalqiwisV1GridConfig {
+  int vertical_cell_size = 1024;
+  int horizontal_cell_size = 1024;
+};
+
+ISendableGridPtr CreateGalqiwisV1Grid(GalqiwisV1GridConfig config = {});
 
 }
 
