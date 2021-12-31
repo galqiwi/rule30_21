@@ -19,4 +19,4 @@ target_link_libraries(parallelogram ${MPI_CXX_LIBRARIES})
 
 add_executable(parallelogram_parallelogram_benchmark parallelogram/crunching/process_parallelogram.cpp parallelogram/parallelogram_benchmark.cpp)
 
-add_executable(bridge bridge/grid/IGrid.cpp bridge/grid/impl/galqiwi_v1_impl.cpp bridge/grid/impl/galqiwi_v1_impl.h bridge/grid/impl/crunching/process_parallelogram.cpp bridge/main.cpp)
+add_executable(bridge bridge/grid/IGrid.cpp bridge/grid/impl/galqiwi_v1_impl.cpp bridge/grid/impl/galqiwi_v1_impl.h bridge/grid/impl/crunching/process_parallelogram.cpp bridge/main.cpp bridge/grid/grid_facade.cpp bridge/grid/grid_facade.h)
