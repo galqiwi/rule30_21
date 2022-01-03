@@ -4,6 +4,7 @@
 
 #include "grid_facade.h"
 #include <assert.h>
+#include <iostream>
 
 namespace grid {
 
@@ -19,6 +20,7 @@ void TSendableGridFacade::Init() {
     tops_.insert(init_cell);
     lefts_.insert(init_cell);
     valid_cells_.insert(init_cell);
+    valid_cells_semaphore_.Release();
   }
 
   backend_->Init();
@@ -30,7 +32,8 @@ void TSendableGridFacade::Do(Cell cell) {
     assert(Validate(cell));
     tops_.erase(cell);
     lefts_.erase(cell);
-    valid_cells_.erase(cell);
+
+    assert(valid_cells_.count(cell) == 0);
   }
   backend_->Do(cell);
   {
@@ -40,11 +43,13 @@ void TSendableGridFacade::Do(Cell cell) {
     tops_.insert(bottom_cell);
     lefts_.insert(right_cell);
 
-    if (Validate(bottom_cell) && Crunchable(bottom_cell)) {
+    if (Validate(bottom_cell) && backend_->Crunchable(bottom_cell)) {
       valid_cells_.insert(bottom_cell);
+      valid_cells_semaphore_.Release();
     }
-    if (Validate(right_cell) && Crunchable(right_cell)) {
+    if (Validate(right_cell) && backend_->Crunchable(right_cell)) {
       valid_cells_.insert(right_cell);
+      valid_cells_semaphore_.Release();
     }
   }
 }
@@ -61,6 +66,9 @@ void TSendableGridFacade::SendTop(Cell cell) {
   {
     std::lock_guard<std::mutex> guard(mutex_);
     tops_.erase(cell);
+    if (valid_cells_.count(cell) > 0) {
+      valid_cells_semaphore_.Acquire();
+    }
     valid_cells_.erase(cell);
   }
   backend_->SendTop(cell);
@@ -73,6 +81,7 @@ void TSendableGridFacade::ReceiveTop(Cell cell) {
     tops_.insert(cell);
     if (Validate(cell) && Crunchable(cell)) {
       valid_cells_.insert(cell);
+      valid_cells_semaphore_.Release();
     }
   }
 }
@@ -81,6 +90,9 @@ void TSendableGridFacade::SendLeft(Cell cell) {
   {
     std::lock_guard<std::mutex> guard(mutex_);
     lefts_.erase(cell);
+    if (valid_cells_.count(cell) > 0) {
+      valid_cells_semaphore_.Acquire();
+    }
     valid_cells_.erase(cell);
   }
   backend_->SendLeft(cell);
@@ -93,6 +105,7 @@ void TSendableGridFacade::ReceiveLeft(Cell cell) {
     lefts_.insert(cell);
     if (Validate(cell) && Crunchable(cell)) {
       valid_cells_.insert(cell);
+      valid_cells_semaphore_.Release();
     }
   }
 }
@@ -102,14 +115,15 @@ bool TSendableGridFacade::Validate(Cell cell) {
   return top_ok && left_ok;
 }
 std::optional<Cell> TSendableGridFacade::PullValidCell() {
+  valid_cells_semaphore_.Acquire();
+
   std::lock_guard<std::mutex> guard(mutex_);
-  if (!valid_cells_.empty()) {
-    auto output = std::move(*valid_cells_.begin());
-    valid_cells_.erase(valid_cells_.begin());
-    return std::move(output);
-  } else {
-    return std::nullopt;
-  }
+  assert(!valid_cells_.empty());
+
+  auto output = std::move(*valid_cells_.begin());
+  valid_cells_.erase(valid_cells_.begin());
+  return std::move(output);
+
 }
 
 }

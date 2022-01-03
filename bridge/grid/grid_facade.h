@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <set>
 #include <mutex>
+#include "../concurrency/Semaphore.h"
 #include "IGrid.h"
 
 namespace grid {
@@ -35,6 +36,7 @@ class TSendableGridFacade : public grid::ISendableGrid {
   std::set<Cell> tops_;
   std::set<Cell> lefts_;
   std::set<Cell> valid_cells_;
+  concurrency::Semaphore valid_cells_semaphore_;
   std::mutex mutex_;
 };
 

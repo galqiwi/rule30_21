@@ -11,8 +11,11 @@
 
 int main() {
   auto grid = grid::CreateGalqiwisV1Grid({
-      .horizontal_cell_size = 1024
+      .vertical_cell_size = 2000,
+      .horizontal_cell_size = 2000,
   });
-  solvers::CreateSimpleSolver(grid)->Solve();
+
+  solvers::CreateMultithreadedSolver(grid, 10)->Solve();
+//  solvers::CreateSimpleSolver(grid)->Solve();
 
 }
